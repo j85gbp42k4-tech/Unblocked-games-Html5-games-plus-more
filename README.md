@@ -29,11 +29,16 @@ https://frogiesarcade.win/
 
 https://frogiesarcade.xyz/
 
-https://frogiesarcade.tk/
 
 
 https://vallejocharterschool.org/
 
 https://trinitypreschoolmp.org/
+
+Anime
+https://www.acsu.buffalo.edu/~alexeysi/streaming/anime/index.html
+
+YouTube watcher
+https://www.watchkin.com/
 
 
