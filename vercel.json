@@ -1,0 +1,8 @@
+{
+  "headers": [
+    {
+      "source": "/Snake.io",
+      "headers": [{ "key": "Content-Type", "value": "text/html; charset=utf-8" }]
+    }
+  ]
+}
