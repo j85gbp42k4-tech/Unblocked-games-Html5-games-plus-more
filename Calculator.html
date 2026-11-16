@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glass Scientific Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      color: #fff;
+      background:
+        radial-gradient(ellipse at 20% 15%, rgba(128, 150, 255, 0.35), transparent 40%),
+        radial-gradient(ellipse at 85% 85%, rgba(238, 127, 185, 0.23), transparent 38%),
+        linear-gradient(145deg, #101522, #090c14);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .calculator {
+      width: min(100%, 380px);
+      padding: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 32px;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+    }
+
+    .screen {
+      min-height: 125px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      padding: 10px 5px 20px;
+      overflow: hidden;
+    }
+
+    .screen-top {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 26px;
+    }
+
+    .expression {
+      min-width: 0;
+      color: rgba(255, 255, 255, 0.58);
+      font-size: 0.95rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .copy-button {
+      flex: 0 0 auto;
+      padding: 4px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.1);
+      font: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .copy-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .display {
+      width: 100%;
+      color: #fff;
+      font-size: clamp(2.6rem, 12vw, 3.8rem);
+      font-weight: 300;
+      letter-spacing: -0.06em;
+      text-align: right;
+      white-space: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      touch-action: pan-x;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      user-select: text;
+    }
+
+    .display::-webkit-scrollbar {
+      display: none;
+    }
+
+    .functions-toggle {
+      width: 100%;
+      min-height: 44px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.11);
+      font: inherit;
+      cursor: pointer;
+      transition: background 150ms ease, transform 150ms ease;
+    }
+
+    .functions-toggle:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .functions-toggle:active {
+      transform: scale(0.98);
+    }
+
+    .advanced-keys,
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .advanced-keys {
+      margin-bottom: 10px;
+    }
+
+    .advanced-keys[hidden] {
+      display: none;
+    }
+
+    button.key {
+      width: 100%;
+      min-width: 0;
+      aspect-ratio: 1 / 1;
+      min-height: 0;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 50%;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      font: inherit;
+      font-size: clamp(0.85rem, 4vw, 1.15rem);
+      cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease, background 120ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button.key:hover {
+      filter: brightness(1.2);
+      background: rgba(255, 255, 255, 0.23);
+    }
+
+    button.key:active {
+      transform: scale(0.94);
+    }
+
+    button:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.85);
+      outline-offset: 3px;
+    }
+
+    .advanced-keys button.key {
+      font-size: clamp(0.8rem, 3.5vw, 1rem);
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .utility {
+      color: #17191f !important;
+      background: rgba(235, 238, 243, 0.82) !important;
+    }
+
+    .utility:hover {
+      background: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .operator {
+      background: #ff9f0a !important;
+      color: #fff !important;
+    }
+
+    .operator:hover,
+    .equals:hover {
+      background: #ffb340 !important;
+    }
+
+    .operator.selected {
+      color: #ff9f0a !important;
+      background: #fff !important;
+    }
+
+    .equals {
+      background: #ff9f0a !important;
+      color: #fff !important;
+      font-size: 1.5rem !important;
+    }
+
+    .hint {
+      margin: 16px 0 0;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.74rem;
+      text-align: center;
+    }
+
+    @media (max-width: 390px) {
+      .calculator {
+        padding: 16px;
+      }
+
+      .keys,
+      .advanced-keys {
+        gap: 8px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="calculator" aria-label="Scientific calculator">
+    <section class="screen" aria-live="polite">
+      <div class="screen-top">
+        <div class="expression" id="expression"></div>
+        <button class="copy-button" id="copyButton" type="button" aria-label="Copy full answer">
+          Copy
+        </button>
+      </div>
+      <div class="display" id="display">0</div>
+    </section>
+
+    <button
+      class="functions-toggle"
+      id="functionsToggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="advancedKeys"
+    >＋ Scientific functions</button>
+
+    <section
+      class="advanced-keys"
+      id="advancedKeys"
+      aria-label="Scientific functions"
+      hidden
+    >
+      <button class="key" data-function="sqrt" aria-label="Square root">√x</button>
+      <button class="key" data-function="square" aria-label="Square">x²</button>
+      <button class="key" data-function="sin">sin</button>
+      <button class="key" data-function="cos">cos</button>
+      <button class="key" data-function="tan">tan</button>
+      <button class="key" data-function="log" aria-label="Base 10 logarithm">log</button>
+      <button class="key" data-function="ln" aria-label="Natural logarithm">ln</button>
+      <button class="key" data-constant="pi" aria-label="Pi">π</button>
+      <button class="key" data-constant="e" aria-label="Euler's number">e</button>
+    </section>
+
+    <section class="keys" aria-label="Calculator keys">
+      <button class="key utility" data-action="clear" aria-label="Clear">AC</button>
+      <button class="key utility" data-action="sign" aria-label="Change sign">±</button>
+      <button class="key utility" data-action="percent" aria-label="Percent">%</button>
+      <button class="key operator" data-operator="/" aria-label="Divide">÷</button>
+
+      <button class="key" data-digit="7">7</button>
+      <button class="key" data-digit="8">8</button>
+      <button class="key" data-digit="9">9</button>
+      <button class="key operator" data-operator="*" aria-label="Multiply">×</button>
+
+      <button class="key" data-digit="4">4</button>
+      <button class="key" data-digit="5">5</button>
+      <button class="key" data-digit="6">6</button>
+      <button class="key operator" data-operator="-" aria-label="Subtract">−</button>
+
+      <button class="key" data-digit="1">1</button>
+      <button class="key" data-digit="2">2</button>
+      <button class="key" data-digit="3">3</button>
+      <button class="key operator" data-operator="+" aria-label="Add">+</button>
+
+      <button class="key" data-digit="0">0</button>
+      <button class="key" data-action="decimal" aria-label="Decimal point">.</button>
+      <button class="key equals" data-action="equals" aria-label="Equals">=</button>
+    </section>
+
+    <p class="hint">Swipe the display to view long answers · Ctrl/Cmd+C copies the full answer</p>
+  </main>
+
+  <script>
+    const display = document.getElementById("display");
+    const expression = document.getElementById("expression");
+    const keys = document.querySelector(".keys");
+    const advancedKeys = document.getElementById("advancedKeys");
+    const functionsToggle = document.getElementById("functionsToggle");
+    const copyButton = document.getElementById("copyButton");
+
+    let current = "0";
+    let storedValue = null;
+    let pendingOperator = null;
+    let startNewNumber = false;
+    let lastOperator = null;
+    let lastOperand = null;
+    let activeTrig = null;
+    let copyStatusTimeout;
+
+    const operatorSymbols = {
+      "+": "+",
+      "-": "−",
+      "*": "×",
+      "/": "÷"
+    };
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) return "Error";
+      if (Math.abs(value) < 1e-12) value = 0;
+      return String(Number(value.toPrecision(12)));
+    }
+
+    function updateDisplay() {
+      display.textContent = activeTrig
+        ? `activeTrig({current})`
+        : current;
+
+      requestAnimationFrame(() => {
+        display.scrollLeft = display.scrollWidth;
+      });
+
+      keys.querySelectorAll("[data-operator]").forEach((button) => {
+        button.classList.toggle(
+          "selected",
+          button.dataset.operator === pendingOperator && startNewNumber
+        );
+      });
+    }
+
+    async function copyAnswer() {
+      const answer = current;
+      const originalLabel = copyButton.textContent;
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(answer);
+        } else {
+          const temporaryInput = document.createElement("textarea");
+          temporaryInput.value = answer;
+          temporaryInput.setAttribute("readonly", "");
+          temporaryInput.style.position = "fixed";
+          temporaryInput.style.opacity = "0";
+          document.body.appendChild(temporaryInput);
+          temporaryInput.select();
+          document.execCommand("copy");
+          temporaryInput.remove();
+        }
+
+        copyButton.textContent = "Copied!";
+      } catch {
+        copyButton.textContent = "Copy failed";
+      }
+
+      clearTimeout(copyStatusTimeout);
+      copyStatusTimeout = setTimeout(() => {
+        copyButton.textContent = originalLabel;
+      }, 1200);
+    }
+
+    function clearCalculator() {
+      current = "0";
+      storedValue = null;
+      pendingOperator = null;
+      startNewNumber = false;
+      lastOperator = null;
+      lastOperand = null;
+      activeTrig = null;
+      expression.textContent = "";
+      updateDisplay();
+    }
+
+    function enterDigit(digit) {
+      if (current === "Error" || startNewNumber) {
+        current = digit;
+        startNewNumber = false;
+      } else if (current === "" || current === "0") {
+        current = digit;
+      } else if (current.replace("-", "").length < 14) {
+        current += digit;
+      }
+
+      updateDisplay();
+    }
+
+    function enterDecimal() {
+      if (current === "Error" || startNewNumber) {
+        current = "0.";
+        startNewNumber = false;
+      } else if (current === "") {
+        current = "0.";
+      } else if (!current.includes(".")) {
+        current += ".";
+      }
+
+      updateDisplay();
+    }
+
+    function calculate(a, operator, b) {
+      switch (operator) {
+        case "+": return a + b;
+        case "-": return a - b;
+        case "*": return a * b;
+        case "/": return b === 0 ? NaN : a / b;
+        default: return b;
+      }
+    }
+
+    function evaluateActiveTrig() {
+      if (!activeTrig || current === "") return false;
+
+      const input = Number(current);
+      const radians = input * Math.PI / 180;
+      let result;
+
+      switch (activeTrig) {
+        case "sin":
+          result = Math.sin(radians);
+          break;
+        case "cos":
+          result = Math.cos(radians);
+          break;
+        case "tan":
+          result = Math.abs(Math.cos(radians)) < 1e-12
+            ? NaN
+            : Math.tan(radians);
+          break;
+        default:
+          return false;
+      }
+
+      const label = `activeTrig({current})`;
+      current = formatNumber(result);
+      activeTrig = null;
+      startNewNumber = true;
+      expression.textContent = label;
+      updateDisplay();
+      return true;
+    }
+
+    function chooseOperator(operator) {
+      if (activeTrig && !evaluateActiveTrig()) return;
+      if (current === "Error") return;
+
+      const value = Number(current);
+
+      if (pendingOperator && !startNewNumber) {
+        const result = calculate(storedValue, pendingOperator, value);
+        current = formatNumber(result);
+        storedValue = result;
+      } else {
+        storedValue = value;
+      }
+
+      pendingOperator = operator;
+      startNewNumber = true;
+      lastOperator = null;
+      lastOperand = null;
+      expression.textContent =
+        `${formatNumber(storedValue)} ${operatorSymbols[operator]}`;
+      updateDisplay();
+    }
+
+    function showResult() {
+      if (current === "Error") return;
+
+      const evaluatedTrig = evaluateActiveTrig();
+      if (evaluatedTrig && !pendingOperator) return;
+
+      if (pendingOperator) {
+        const operand = Number(current);
+        const firstValue = storedValue;
+        const result = calculate(firstValue, pendingOperator, operand);
+
+        expression.textContent =
+          `${formatNumber(firstValue)} ${operatorSymbols[pendingOperator]} ${formatNumber(operand)} =`;
+
+        lastOperator = pendingOperator;
+        lastOperand = operand;
+        current = formatNumber(result);
+        storedValue = null;
+        pendingOperator = null;
+        startNewNumber = true;
+      } else if (lastOperator && lastOperand !== null) {
+        const result = calculate(Number(current), lastOperator, lastOperand);
+        expression.textContent =
+          `${current} ${operatorSymbols[lastOperator]} ${formatNumber(lastOperand)} =`;
+        current = formatNumber(result);
+        startNewNumber = true;
+      }
+
+      updateDisplay();
+    }
+
+    function applyFunction(name) {
+      if (["sin", "cos", "tan"].includes(name)) {
+        activeTrig = name;
+        current = "";
+        startNewNumber = false;
+        expression.textContent = "";
+        updateDisplay();
+        return;
+      }
+
+      if (current === "Error") return;
+
+      const value = Number(current);
+      let result;
+      let label;
+
+      switch (name) {
+        case "sqrt":
+          result = value < 0 ? NaN : Math.sqrt(value);
+          label = `√(${current})`;
+          break;
+        case "square":
+          result = value ** 2;
+          label = `(${current})²`;
+          break;
+        case "log":
+          result = value <= 0 ? NaN : Math.log10(value);
+          label = `log(${current})`;
+          break;
+        case "ln":
+          result = value <= 0 ? NaN : Math.log(value);
+          label = `ln(${current})`;
+          break;
+        default:
+          return;
+      }
+
+      current = formatNumber(result);
+      startNewNumber = true;
+      expression.textContent = label;
+      updateDisplay();
+    }
+
+    function enterConstant(name) {
+      if (name === "pi") {
+        current = formatNumber(Math.PI);
+        expression.textContent = "π";
+      } else if (name === "e") {
+        current = formatNumber(Math.E);
+        expression.textContent = "e";
+      }
+
+      startNewNumber = true;
+      activeTrig = null;
+      updateDisplay();
+    }
+
+    function changeSign() {
+      if (current === "Error") return;
+
+      if (current === "") {
+        current = "-0";
+      } else if (Number(current) !== 0) {
+        current = current.startsWith("-") ? current.slice(1) : `-${current}`;
+      }
+
+      updateDisplay();
+    }
+
+    function percent() {
+      if (current === "Error" || current === "") return;
+
+      current = formatNumber(Number(current) / 100);
+      startNewNumber = true;
+      updateDisplay();
+    }
+
+    function backspace() {
+      if (current === "Error") {
+        current = "0";
+      } else if (current === "") {
+        return;
+      } else if (startNewNumber) {
+        current = "0";
+        startNewNumber = false;
+      } else {
+        current = current.length > 1 ? current.slice(0, -1) : "0";
+        if (current === "-") current = "0";
+      }
+
+      updateDisplay();
+    }
+
+    functionsToggle.addEventListener("click", () => {
+      const isExpanded =
+        functionsToggle.getAttribute("aria-expanded") === "true";
+
+      functionsToggle.setAttribute("aria-expanded", String(!isExpanded));
+      advancedKeys.hidden = isExpanded;
+      functionsToggle.textContent = isExpanded
+        ? "＋ Scientific functions"
+        : "− Scientific functions";
+    });
+
+    copyButton.addEventListener("click", copyAnswer);
+
+    keys.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      if (button.dataset.digit !== undefined) {
+        enterDigit(button.dataset.digit);
+      } else if (button.dataset.operator) {
+        chooseOperator(button.dataset.operator);
+      } else {
+        switch (button.dataset.action) {
+          case "clear": clearCalculator(); break;
+          case "decimal": enterDecimal(); break;
+          case "equals": showResult(); break;
+          case "sign": changeSign(); break;
+          case "percent": percent(); break;
+        }
+      }
+    });
+
+    advancedKeys.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      if (button.dataset.function) {
+        applyFunction(button.dataset.function);
+      } else if (button.dataset.constant) {
+        enterConstant(button.dataset.constant);
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
+        event.preventDefault();
+        copyAnswer();
+      } else if (/^[0-9]$/.test(event.key)) {
+        enterDigit(event.key);
+      } else if (event.key === ".") {
+        enterDecimal();
+      } else if (["+", "-", "*", "/"].includes(event.key)) {
+        chooseOperator(event.key);
+      } else if (event.key === "Enter" || event.key === "=") {
+        event.preventDefault();
+        showResult();
+      } else if (event.key === "Backspace") {
+        backspace();
+      } else if (event.key === "Escape" || event.key === "Delete") {
+        clearCalculator();
+      } else if (event.key === "%") {
+        percent();
+      }
+    });
+
+    updateDisplay();
+  </script>
+</body>
+</html>
+
